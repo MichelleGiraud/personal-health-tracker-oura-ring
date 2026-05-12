@@ -1,4 +1,4 @@
-import { DailySummaryRowNormalized, ChartPoint } from "../types/types.home";
+import { DailySummaryRow, DailySummaryRowNormalized, ChartPoint } from "../types/types.home";
 
 export function formatSleep(seconds: number | null) {
   if (!seconds || seconds < 1) return "-";
@@ -120,4 +120,68 @@ export function toNumber(value: unknown): number | null {
   if (value === null || value === undefined) return null;
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+export function normalizeDailySummaryRow(row: DailySummaryRow): DailySummaryRowNormalized {
+  return {
+    ...row,
+    sleep_total_seconds: toNumber(row.sleep_total_seconds),
+    readiness_score: toNumber(row.readiness_score),
+    steps: toNumber(row.steps),
+    activity_score: toNumber(row.activity_score),
+    hrv_avg_ms: toNumber(row.hrv_avg_ms),
+    resting_hr_bpm: toNumber(row.resting_hr_bpm),
+    stress_high_minutes: toNumber(row.stress_high_minutes),
+    recovery_high_minutes: toNumber(row.recovery_high_minutes),
+    sleep_deep_seconds: toNumber(row.sleep_deep_seconds),
+    sleep_rem_seconds: toNumber(row.sleep_rem_seconds),
+    sleep_light_seconds: toNumber(row.sleep_light_seconds),
+    sleep_awake_seconds: toNumber(row.sleep_awake_seconds),
+    stress_day_summary: typeof row.stress_day_summary === "string" ? row.stress_day_summary : null,
+  };
+}
+
+export function normalizeDailySummaryRows(rows: DailySummaryRow[]) {
+  return rows.map(normalizeDailySummaryRow);
+}
+
+export function getBand(
+  value: number | null,
+  goodThreshold: number,
+  lowThreshold: number,
+  goodLabel = "High",
+  midLabel = "Normal",
+  lowLabel = "Low"
+) {
+  if (value === null) return "No data";
+  if (value >= goodThreshold) return goodLabel;
+  if (value <= lowThreshold) return lowLabel;
+  return midLabel;
+}
+
+export function getPredictionPillTone(value: string | null): "neutral" | "good" | "warn" {
+  if (value === "Ready" || value === "High") return "good";
+  if (value === "Recovery" || value === "Low") return "warn";
+  return "neutral";
+}
+
+export function getYAxisTicks(values: number[]) {
+  if (values.length === 0) return [] as number[];
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const mid = (min + max) / 2;
+  return [max, mid, min].map((value) => Math.round(value * 10) / 10);
+}
+
+export function getXLabelPoints(points: Array<{ x: number; label: string }>) {
+  if (points.length === 0) return [] as Array<{ x: number; label: string }>;
+  if (points.length <= 3) {
+    return points.map((point) => ({ x: point.x, label: point.label.slice(5) }));
+  }
+
+  const first = points[0];
+  const middle = points[Math.floor(points.length / 2)];
+  const last = points[points.length - 1];
+
+  return [first, middle, last].map((point) => ({ x: point.x, label: point.label.slice(5) }));
 }

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 type PillProps = {
   children: ReactNode;
-  tone?: "neutral" | "good" | "warn";
+  tone?: "neutral" | "good" | "warn" ;
 };
 
 const toneClass: Record<NonNullable<PillProps["tone"]>, string> = {
