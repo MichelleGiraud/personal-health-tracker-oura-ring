@@ -59,12 +59,11 @@ export function RecoveryTrendSection({
         chartWidth={chartWidth}
         chartHeight={chartHeight}
         chartPadding={chartPadding}
-        stroke="var(--secondary)"
+        stroke="var(--recovery)"
         ariaLabel="Recovery trend line chart"
         tooltipFormatter={(point) => `${point.label}: ${point.value}`}
         headerSlot={
           <SegmentedControl
-            label="Metric"
             options={metricOptions}
             selectedValue={chartMetric}
             queryKey="metric"
@@ -85,7 +84,7 @@ export function RecoveryTrendSection({
           <p className="mt-6 text-sm text-[var(--text-muted)]">
             Overall signal: <span className="font-semibold text-[var(--text)]">{overallState}</span>
           </p>
-          <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--primary)_78%,white)]">
+          <p className="mt-2 text-sm text-[var(--outlook)]">
             Recommendation: {actionCard}
           </p>
         </article>

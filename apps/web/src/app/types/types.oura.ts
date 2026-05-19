@@ -15,6 +15,10 @@ export type OuraDailySource =
 
 export type DailySummaryAccumulator = {
   sleep_total_seconds?: number | null;
+  sleep_deep_seconds?: number | null;
+  sleep_rem_seconds?: number | null;
+  sleep_light_seconds?: number | null;
+  sleep_awake_seconds?: number | null;
   sleep_efficiency?: number | null;
   sleep_latency_seconds?: number | null;
   readiness_score?: number | null;

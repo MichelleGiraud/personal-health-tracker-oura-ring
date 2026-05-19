@@ -26,11 +26,20 @@ create table if not exists daily_summary (
   user_id uuid not null references app_user(id) on delete cascade,
   day date not null,
   sleep_total_seconds integer,
+  sleep_deep_seconds integer,
+  sleep_rem_seconds integer,
+  sleep_light_seconds integer,
+  sleep_awake_seconds integer,
   sleep_efficiency numeric,
   sleep_latency_seconds integer,
   readiness_score integer,
   steps integer,
   activity_score integer,
+  hrv_avg_ms numeric,
+  resting_hr_bpm numeric,
+  stress_high_minutes integer,
+  recovery_high_minutes integer,
+  stress_day_summary text,
   updated_at timestamptz not null default now(),
   primary key (user_id, day)
 );
@@ -43,3 +52,7 @@ alter table daily_summary add column if not exists recovery_high_minutes integer
 alter table daily_summary add column if not exists stress_day_summary text;
 alter table daily_summary add column if not exists hrv_avg_ms numeric;
 alter table daily_summary add column if not exists resting_hr_bpm numeric;
+alter table daily_summary add column if not exists sleep_deep_seconds integer;
+alter table daily_summary add column if not exists sleep_rem_seconds integer;
+alter table daily_summary add column if not exists sleep_light_seconds integer;
+alter table daily_summary add column if not exists sleep_awake_seconds integer;

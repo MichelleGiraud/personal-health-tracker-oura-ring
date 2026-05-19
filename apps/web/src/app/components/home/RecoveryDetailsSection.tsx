@@ -46,7 +46,7 @@ export function RecoveryDetailsSection({
           chartWidth={chartWidth}
           chartHeight={chartHeight}
           chartPadding={chartPadding}
-          stroke="var(--positive)"
+          stroke="var(--hrv)"
           ariaLabel="HRV trend line chart"
           tooltipFormatter={(point) => `${point.label}: ${point.value} ms`}
         />

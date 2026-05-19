@@ -32,6 +32,10 @@ create table if not exists daily_summary (
   day date not null,
 
   sleep_total_seconds int,
+  sleep_deep_seconds int,
+  sleep_rem_seconds int,
+  sleep_light_seconds int,
+  sleep_awake_seconds int,
   sleep_efficiency numeric,
   sleep_latency_seconds int,
 
@@ -39,6 +43,11 @@ create table if not exists daily_summary (
 
   steps int,
   activity_score int,
+  hrv_avg_ms numeric,
+  resting_hr_bpm numeric,
+  stress_high_minutes int,
+  recovery_high_minutes int,
+  stress_day_summary text,
 
   updated_at timestamptz not null default now(),
   primary key (user_id, day)

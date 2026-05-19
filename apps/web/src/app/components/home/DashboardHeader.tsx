@@ -28,7 +28,7 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   return (
     <header id="dashboard-header" className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-      <section className="overflow-hidden rounded-[36px] border border-[var(--border)] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--surface-elevated)_82%,white)_0%,var(--surface)_58%,color-mix(in_srgb,var(--primary)_14%,white)_100%)] p-8 shadow-[0_28px_80px_var(--shadow)]">
+      <section id="recovery-studio-card" className="overflow-hidden rounded-[36px] border border-[var(--border)] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--surface-elevated)_82%,white)_0%,var(--surface)_58%,color-mix(in_srgb,var(--primary)_14%,white)_100%)] p-8 shadow-[0_28px_80px_var(--shadow)]">
         <div className="space-y-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">

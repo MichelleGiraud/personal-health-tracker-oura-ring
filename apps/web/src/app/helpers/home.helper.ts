@@ -42,9 +42,10 @@ export function buildLineChartPoints(
   const padding = 24;
   const innerWidth = width - padding * 2;
   const innerHeight = height - padding * 2;
-  const count = chartRows.length;
+  const definedRows = chartRows.filter((row) => getValue(row) !== null);
+  const count = definedRows.length;
 
-  const points = chartRows
+  const points = definedRows
     .map((row, index) => {
       const rawValue = getValue(row);
       if (rawValue === null) return null;
@@ -126,6 +127,7 @@ export function normalizeDailySummaryRow(row: DailySummaryRow): DailySummaryRowN
   return {
     ...row,
     sleep_total_seconds: toNumber(row.sleep_total_seconds),
+    sleep_efficiency: toNumber(row.sleep_efficiency),
     readiness_score: toNumber(row.readiness_score),
     steps: toNumber(row.steps),
     activity_score: toNumber(row.activity_score),

@@ -41,7 +41,7 @@ export function SleepInsightsSection({
         chartWidth={chartWidth}
         chartHeight={chartHeight}
         chartPadding={chartPadding}
-        stroke="var(--primary)"
+        stroke="var(--sleep)"
         ariaLabel="Sleep trend line chart"
         tooltipFormatter={(point) => `${point.label}: ${formatSleep(point.value)}`}
         yTickSuffix="h"

@@ -1,14 +1,10 @@
 export function RecoveryRings() {
   return (
-      <div className="relative flex h-[430px] w-[430px] items-center justify-center">
-        {/* Outer circles */}
-        <div className="absolute h-[400px] w-[400px] rounded-full border-[3px] border-[#91D3C8]/35" />
-        <div className="absolute h-[320px] w-[320px] rounded-full border-[3px] border-[#BBB1E9]/35" />
-        <div className="absolute h-[250px] w-[250px] rounded-full border-[3px] border-[#EFB4AD]/35" />
-        <div className="absolute h-[170px] w-[170px] rounded-full border-[3px] border-[#91D3C8]/45" />
-
-      {/* Center gradient orb */}
-      <div className="absolute h-28 w-28 rounded-full bg-gradient-to-br from-[#76D9AD] to-[#5B9FDA] shadow-[0_20px_60px_rgba(76,154,180,0.35)]" />
+    <div className="relative aspect-square w-full max-w-[520px]">
+      <div className="absolute left-1/2 top-1/2 h-[74%] w-[74%] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[color-mix(in_srgb,var(--hrv)_34%,transparent)]" />
+      <div className="absolute left-1/2 top-1/2 h-[58%] w-[58%] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[color-mix(in_srgb,var(--load)_34%,transparent)]" />
+      <div className="absolute left-1/2 top-1/2 h-[40%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[color-mix(in_srgb,var(--recovery)_48%,transparent)]" />
+      <div className="absolute left-1/2 top-1/2 h-[26%] w-[26%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-[var(--recovery)] via-[color-mix(in_srgb,var(--sleep)_64%,var(--recovery))] to-[var(--sleep)] shadow-[0_20px_60px_rgba(0,0,0,0.25)]" />
     </div>
   );
 }

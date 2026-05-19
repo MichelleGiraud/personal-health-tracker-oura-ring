@@ -1,7 +1,6 @@
 import { query } from "@/lib/db";
 import { DashboardTopBar } from "./components/home/DashboardTopBar";
 import { RecoverySnapshot } from "./components/home/RecoverySnapshot";
-import { DashboardHeader } from "./components/home/DashboardHeader";
 import { EmptyDashboardState } from "./components/home/EmptyDashboardState";
 import { MetricsOverviewSection } from "./components/home/MetricsOverviewSection";
 import { RecoveryDetailsSection } from "./components/home/RecoveryDetailsSection";
@@ -11,10 +10,10 @@ import { fetchAiPrediction } from "./helpers/ai.server";
 import {
   buildLineChartPoints,
   formatDay,
-  formatSleep,
   formatTimestamp,
   getBand,
   getHrvSignal,
+  formatSleep,
   getRecoveryLabel,
   getRecoveryTone,
   getXLabelPoints,
@@ -29,6 +28,7 @@ import type {
   DailySummaryRowNormalized,
   LastSyncedRow,
 } from "./types/types.home";
+import TodaysKeySignals from "./components/home/TodaysKeySignals";
 
 export default async function Home({
   searchParams,
@@ -47,14 +47,14 @@ export default async function Home({
   const activeUserId = activeUserRes.rows[0]?.user_id ?? null;
   const allowedRanges = [7, 14, 30, 90];
   const parsedRange = Number(resolvedSearchParams?.range);
-  const range = allowedRanges.includes(parsedRange) ? parsedRange : 14;
+  const range = allowedRanges.includes(parsedRange) ? parsedRange : 7;
   const chartMetric: ChartMetric = resolvedSearchParams?.metric === "activity" ? "activity" : "readiness";
 
   const aiPrediction = await fetchAiPrediction(activeUserId);
 
   const latestRes = activeUserId
     ? await query<DailySummaryRow>(
-        `select day, sleep_total_seconds, readiness_score, steps, activity_score, hrv_avg_ms, resting_hr_bpm,
+        `select day, sleep_total_seconds, sleep_efficiency, readiness_score, steps, activity_score, hrv_avg_ms, resting_hr_bpm,
                 stress_high_minutes, recovery_high_minutes, stress_day_summary,
                 sleep_deep_seconds, sleep_rem_seconds, sleep_light_seconds, sleep_awake_seconds
          from daily_summary
@@ -76,7 +76,7 @@ export default async function Home({
 
   const historyRes = activeUserId
     ? await query<DailySummaryRow>(
-        `select day, sleep_total_seconds, readiness_score, steps, activity_score, hrv_avg_ms, resting_hr_bpm,
+        `select day, sleep_total_seconds, sleep_efficiency, readiness_score, steps, activity_score, hrv_avg_ms, resting_hr_bpm,
                 stress_high_minutes, recovery_high_minutes, stress_day_summary,
                 sleep_deep_seconds, sleep_rem_seconds, sleep_light_seconds, sleep_awake_seconds
          from daily_summary
@@ -89,7 +89,7 @@ export default async function Home({
 
   const chartRes = activeUserId
     ? await query<DailySummaryRow>(
-        `select day, sleep_total_seconds, readiness_score, steps, activity_score, hrv_avg_ms, resting_hr_bpm,
+        `select day, sleep_total_seconds, sleep_efficiency, readiness_score, steps, activity_score, hrv_avg_ms, resting_hr_bpm,
                 stress_high_minutes, recovery_high_minutes, stress_day_summary,
                 sleep_deep_seconds, sleep_rem_seconds, sleep_light_seconds, sleep_awake_seconds
          from daily_summary
@@ -107,6 +107,8 @@ export default async function Home({
   const historyRowsN = normalizeDailySummaryRows(historyRes.rows);
 
   const latestSleepRow = chartRowsN.find((row) => row.sleep_total_seconds !== null) ?? null;
+  const readinessRows = chartRowsN.filter((row) => row.readiness_score !== null);
+  const latestReadinessRow = readinessRows[0] ?? null;
   const latestStepsRow = chartRowsN.find((row) => row.steps !== null) ?? null;
   const latestActivityScoreRow = chartRowsN.find((row) => row.activity_score !== null) ?? null;
   const latestHrvRow = chartRowsN.find((row) => row.hrv_avg_ms !== null) ?? null;
@@ -178,12 +180,11 @@ export default async function Home({
     .map((row) => (chartMetric === "readiness" ? row.readiness_score : row.activity_score))
     .filter((value): value is number => value !== null);
 
-  const latestReadiness = latest?.readiness_score ?? null;
+  const latestReadiness = latestReadinessRow?.readiness_score ?? null;
   const latestActivityScore = latest?.activity_score ?? null;
   const latestHrv = latestHrvRow?.hrv_avg_ms ?? null;
   const latestStressHigh = latestStressRow?.stress_high_minutes ?? null;
   const activityPaused = latestActivityScore === null && (latest?.steps ?? null) !== null;
-
   const hrvBaseline =
     hrvValues.length > 0 ? Math.round(hrvValues.reduce((sum, value) => sum + value, 0) / hrvValues.length) : null;
   const sleepBaselineSeconds =
@@ -277,6 +278,71 @@ export default async function Home({
     latestReadiness !== null && latestReadiness < 60 ? "Low recovery day" : null,
   ].filter((flag): flag is string => flag !== null);
 
+  const todaysSignalCards = [
+  {
+    eyebrow: "Sleep Signal",
+    state: sleepState,
+    value: formatSleep(latestSleepRow?.sleep_total_seconds ?? null),
+    line1:
+      sleepState === "Low"
+        ? "Below recovery range."
+        : sleepState === "On target"
+          ? "Within your recovery range."
+          : "Close to your recent rhythm.",
+    line2:
+      sleepState === "Low"
+        ? "Main limiter today."
+        : "Sleep is not the main limiter today.",
+    tone: "sleep" as const,
+  },
+  {
+    eyebrow: "Resilience Signal",
+    state: hrvSignal.label === "High" ? "Strong" : hrvSignal.label,
+    value: latestHrv === null ? "--" : `${Math.round(latestHrv)}ms`,
+    line1:
+      hrvDelta !== null && hrvDelta > 0
+        ? "Above recent baseline."
+        : hrvDelta !== null && hrvDelta < 0
+          ? "Below recent baseline."
+          : "Near recent baseline.",
+    line2:
+      hrvSignal.label === "High"
+        ? "Strong recovery capacity."
+        : hrvSignal.label === "Low"
+          ? "Recovery capacity is reduced."
+          : "Your nervous system looks steady.",
+    tone: "hrv" as const,
+  },
+  {
+    eyebrow: "Load Signal",
+    state:
+      activityPaused
+        ? "Paused"
+        : stressDelta !== null && stressDelta >= 30
+          ? "Elevated"
+          : "Balanced",
+    value:
+      activityPaused
+        ? "Activity paused"
+        : stressDelta !== null && stressDelta >= 30
+          ? "High load"
+          : "Moderate load",
+    line1:
+      activityPaused
+        ? "Activity score is not available."
+        : stressDelta !== null && stressDelta >= 30
+          ? "More strain than usual."
+          : "Load is within your recent range.",
+    line2:
+      activityPaused
+        ? "Use recovery signals as your guide."
+        : stressDelta !== null && stressDelta >= 30
+          ? "Keep effort moderate."
+          : "Current load looks manageable.",
+    tone: "load" as const,
+  },
+];
+
   const recoveryYAxisTicks = getYAxisTicks(recoveryValues);
   const sleepYAxisTicks = getYAxisTicks(sleepValues.map((value) => value / 3600));
   const hrvYAxisTicks = getYAxisTicks(hrvValues);
@@ -284,10 +350,24 @@ export default async function Home({
   const sleepXLabels = getXLabelPoints(sleepChart.points);
   const hrvXLabels = getXLabelPoints(hrvChart.points);
 
-  const heroSummary = latest ? summaryLine : "Connect Oura and run your first sync to unlock your daily recovery story.";
-  const heroRecoveryValue = latestReadiness === null ? "--" : `${latestReadiness}`;
-  const heroSleepValue = formatSleep(latestSleepRow?.sleep_total_seconds ?? null);
-  const heroStressValue = latestStressHigh === null ? "--" : `${latestStressHigh}m`;
+  const latestRecoveryContext = latestReadinessRow ?? latest;
+  const heroHeadline =
+    latestReadiness === null
+      ? "Your body is waiting for more recovery data."
+      : latestReadiness >= 80
+        ? "Your body looks ready for a strong day."
+        : latestReadiness >= 60
+          ? "Your body is carrying slight fatigue today."
+          : "Your body is asking for recovery today.";
+  const heroSummary =
+    latestReadiness === null
+      ? "Sync more recent sleep, recovery and stress data to unlock a clearer body signal."
+      : summaryLine;
+  const signalChips = [
+    `Sleep · ${sleepState}`,
+    `HRV · ${hrvSignal.label}`,
+    `Load · ${activityPaused ? "Paused" : activityState}`,
+  ];
 
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 text-[var(--text)] sm:px-6 lg:px-8">
@@ -295,27 +375,25 @@ export default async function Home({
         <DashboardTopBar
           rangeOptions={rangeOptions}
           range={range}
-        />
-        <RecoverySnapshot latestHrv={latestHrv} recoveryLabel={recoveryLabel} latestSteps={latestStepsRow?.steps ?? null}/>
-        <DashboardHeader
-          heroSummary={heroSummary}
           lastSyncedLabel={formatTimestamp(lastSynced)}
-          heroRecoveryValue={heroRecoveryValue}
-          heroSleepValue={heroSleepValue}
-          heroStressValue={heroStressValue}
+        />
+        <RecoverySnapshot
+          headline={heroHeadline}
+          latestReadiness={latestReadiness}
           recoveryLabel={recoveryLabel}
-          sleepState={sleepState}
-          stressState={stressState}
-          actionCard={actionCard}
-          aiPrediction={aiPrediction}
+          summary={heroSummary}
+          latestHrv={latestHrv}
+          latestSteps={latestStepsRow?.steps ?? null}
+          signalChips={signalChips}
         />
 
         {!latest ? (
           <EmptyDashboardState />
         ) : (
           <>
+            <TodaysKeySignals cards={todaysSignalCards} />
             <MetricsOverviewSection
-              latest={latest}
+              latest={latestRecoveryContext ?? latest}
               latestReadiness={latestReadiness}
               latestSleepRow={latestSleepRow}
               latestStepsRow={latestStepsRow}

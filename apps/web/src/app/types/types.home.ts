@@ -1,6 +1,7 @@
 export type DailySummaryRow = {
   day: string;
   sleep_total_seconds: number | string | null;
+  sleep_efficiency: number | string | null;
   readiness_score: number | string | null;
   steps: number | string | null;
   activity_score: number | string | null;
@@ -18,6 +19,7 @@ export type DailySummaryRow = {
 export type DailySummaryRowNormalized = {
   day: string;
   sleep_total_seconds: number | null;
+  sleep_efficiency: number | null;
   readiness_score: number | null;
   steps: number | null;
   activity_score: number | null;
