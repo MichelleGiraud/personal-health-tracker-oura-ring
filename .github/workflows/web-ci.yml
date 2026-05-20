@@ -116,8 +116,8 @@ jobs:
           cat /tmp/web-server.log
           exit 1
 
-      - name: Assert homepage responds
-        run: grep -Eq "Daily dashboard|No data yet" /tmp/web-home.html
+      - name: Assert homepage renders dashboard shell
+        run: grep -Eq "recoverystudio|Connect Oura and pull your first data" /tmp/web-home.html
 
       - name: Stop app and database
         if: always()
