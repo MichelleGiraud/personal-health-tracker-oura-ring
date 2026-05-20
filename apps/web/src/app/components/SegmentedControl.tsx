@@ -5,14 +5,12 @@ import type { Route } from "next";
 import { motion } from "framer-motion";
 
 type SegmentedControlProps = {
-  label: string;
   options: Array<{ label: string; value: string }>;
   selectedValue: string;
   queryKey: "range" | "metric";
 };
 
 export function SegmentedControl({
-  label,
   options,
   selectedValue,
   queryKey,
@@ -30,8 +28,7 @@ export function SegmentedControl({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{label}</p>
-      <div className="inline-flex rounded-2xl bg-zinc-100 p-1">
+      <div className="inline-flex rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
         {options.map((option) => {
           const isActive = option.value === selectedValue;
           return (
@@ -39,7 +36,7 @@ export function SegmentedControl({
               {isActive ? (
                 <motion.div
                   layoutId={`segmented-pill-${queryKey}`}
-                  className="absolute inset-0 rounded-xl bg-white shadow-sm"
+                  className="absolute inset-0 rounded-xl bg-[var(--text)] shadow-sm"
                   transition={{ type: "spring", stiffness: 500, damping: 38 }}
                 />
               ) : null}
@@ -47,7 +44,7 @@ export function SegmentedControl({
                 type="button"
                 onClick={() => onSelect(option.value)}
                 className={`relative z-10 rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
-                  isActive ? "text-zinc-900" : "text-zinc-600 hover:text-zinc-900"
+                  isActive ? "text-[var(--background)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"
                 }`}
               >
                 {option.label}

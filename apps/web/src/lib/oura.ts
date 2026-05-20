@@ -1,9 +1,8 @@
 import { query } from "@/lib/db";
-import {OuraTokenRow,OuraDailySource, DailySummaryAccumulator } from '../app/types/types.oura'
+import { OuraTokenRow, OuraDailySource, DailySummaryAccumulator } from "../app/types/types.oura";
 
 const OURA_TOKEN_URL = "https://api.ouraring.com/oauth/token";
 const OURA_V2_BASE_URL = "https://api.ouraring.com/v2/usercollection";
-
 
 function getBasicAuthHeader() {
   const clientId = process.env.OURA_CLIENT_ID;
@@ -140,6 +139,22 @@ function normalizePositiveNumber(value: unknown): number | null {
   return normalized;
 }
 
+function shouldPersistSleepSummary(row: Record<string, unknown>) {
+  const sleepType = typeof row.type === "string" ? row.type : null;
+
+  // Oura sleep data can include naps. Keep those in raw storage, but only
+  // promote overnight sleep rows into the daily summary the dashboard reads.
+  if (sleepType && sleepType.toLowerCase().includes("nap")) {
+    return false;
+  }
+
+  return true;
+}
+
+function isEmptyPatch(patch: DailySummaryAccumulator) {
+  return Object.keys(patch).length === 0;
+}
+
 async function saveRawDailyData(
   userId: string,
   source: OuraDailySource,
@@ -166,6 +181,10 @@ async function saveRawDailyData(
 
 function buildSummaryPatch(source: OuraDailySource, row: Record<string, unknown>): DailySummaryAccumulator {
   if (source === "sleep") {
+    if (!shouldPersistSleepSummary(row)) {
+      return {};
+    }
+
     return {
       sleep_total_seconds: normalizeNumber(row.total_sleep_duration),
       sleep_efficiency: normalizeNumber(row.efficiency),
@@ -174,6 +193,10 @@ function buildSummaryPatch(source: OuraDailySource, row: Record<string, unknown>
       resting_hr_bpm:
         normalizePositiveNumber(row.lowest_heart_rate) ??
         normalizePositiveNumber(row.average_heart_rate),
+      sleep_deep_seconds: normalizeNumber(row.deep_sleep_duration),
+      sleep_rem_seconds: normalizeNumber(row.rem_sleep_duration),
+      sleep_light_seconds: normalizeNumber(row.light_sleep_duration),
+      sleep_awake_seconds: normalizeNumber(row.awake_time),
     };
   }
 
@@ -216,6 +239,9 @@ async function saveDailySummary(userId: string, source: OuraDailySource, payload
     }
 
     const patch = buildSummaryPatch(source, row as Record<string, unknown>);
+    if (isEmptyPatch(patch)) {
+      continue;
+    }
 
     await query(
       `insert into daily_summary (
@@ -232,8 +258,12 @@ async function saveDailySummary(userId: string, source: OuraDailySource, payload
          stress_high_minutes, 
          recovery_high_minutes, 
          stress_day_summary,
+         sleep_deep_seconds,
+         sleep_rem_seconds,
+         sleep_light_seconds,
+         sleep_awake_seconds,
          updated_at
-       ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())
+       ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, now())
        on conflict (user_id, day)
        do update set
          sleep_total_seconds = coalesce(excluded.sleep_total_seconds, daily_summary.sleep_total_seconds),
@@ -247,6 +277,10 @@ async function saveDailySummary(userId: string, source: OuraDailySource, payload
          stress_high_minutes = coalesce(excluded.stress_high_minutes, daily_summary.stress_high_minutes),
          recovery_high_minutes = coalesce(excluded.recovery_high_minutes, daily_summary.recovery_high_minutes),
          stress_day_summary = coalesce(excluded.stress_day_summary, daily_summary.stress_day_summary),
+         sleep_deep_seconds = coalesce(excluded.sleep_deep_seconds, daily_summary.sleep_deep_seconds),
+         sleep_rem_seconds = coalesce(excluded.sleep_rem_seconds, daily_summary.sleep_rem_seconds),
+         sleep_light_seconds = coalesce(excluded.sleep_light_seconds, daily_summary.sleep_light_seconds),
+         sleep_awake_seconds = coalesce(excluded.sleep_awake_seconds, daily_summary.sleep_awake_seconds),
          updated_at = now()`,
       [
         userId,
@@ -261,7 +295,11 @@ async function saveDailySummary(userId: string, source: OuraDailySource, payload
         patch.resting_hr_bpm ?? null,
         patch.stress_high_minutes ?? null,
         patch.recovery_high_minutes ?? null,
-        patch.stress_day_summary ?? null
+        patch.stress_day_summary ?? null,
+        patch.sleep_deep_seconds ?? null,
+        patch.sleep_rem_seconds ?? null,
+        patch.sleep_light_seconds ?? null,
+        patch.sleep_awake_seconds ?? null,
       ]
     );
   }
