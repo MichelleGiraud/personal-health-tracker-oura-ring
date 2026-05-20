@@ -14,6 +14,23 @@ type ForecastCardProps = {
   children: React.ReactNode;
 };
 
+function getForecastToneClass(tone: ForecastCardProps["tone"]) {
+  return tone === "sleep"
+    ? "text-[var(--sleep)]"
+    : tone === "hrv"
+      ? "text-[var(--hrv)]"
+      : "text-[var(--load)]";
+}
+
+function getPredictionTone(value: string | null): ForecastCardProps["tone"] {
+  if (!value) return "hrv";
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized.includes("ready") || normalized.includes("high")) return "sleep";
+  if (normalized.includes("recovery") || normalized.includes("low")) return "load";
+  return "hrv";
+}
+
 function ForecastCard({
   eyebrow,
   state,
@@ -21,12 +38,7 @@ function ForecastCard({
   tone,
   children,
 }: ForecastCardProps) {
-  const toneClass =
-    tone === "sleep"
-      ? "text-[var(--sleep)]"
-      : tone === "hrv"
-        ? "text-[var(--hrv)]"
-        : "text-[var(--load)]";
+  const toneClass = getForecastToneClass(tone);
 
   return (
     <article className="rounded-[40px] border border-[color-mix(in_srgb,var(--border)_88%,white)] bg-[color-mix(in_srgb,var(--surface-elevated)_78%,#243028)] p-10 shadow-[0_22px_60px_rgba(0,0,0,0.18)]">
@@ -34,7 +46,7 @@ function ForecastCard({
         {eyebrow}
       </p>
       <p className={`mt-8 text-2xl font-medium ${toneClass} sm:text-2xl`}>{state}</p>
-      <p className="mt-6 text-5xl font-medium tracking-tight text-[var(--text)] sm:text-5xl">{value}</p>
+      <p className={`mt-6 text-5xl font-medium tracking-tight ${toneClass} sm:text-5xl`}>{value}</p>
       <div className="mt-10 space-y-3 text-sm leading-[1.5] text-[var(--text-muted)] sm:text-sm">
         {children}
       </div>
@@ -47,19 +59,8 @@ export function AIInsightCards({ prediction }: AIInsightCardsProps) {
     return null;
   }
 
-  const outlookTone =
-    prediction.predictedRecoveryDay === "Ready"
-      ? "sleep"
-      : prediction.predictedRecoveryDay === "Recovery"
-        ? "load"
-        : "hrv";
-
-  const confidenceTone =
-    prediction.predictionConfidenceLabel === "High"
-      ? "sleep"
-      : prediction.predictionConfidenceLabel === "Low"
-        ? "load"
-        : "hrv";
+  const outlookTone = getPredictionTone(prediction.predictedRecoveryDay);
+  const confidenceTone = getPredictionTone(prediction.predictionConfidenceLabel);
 
   return (
     <div className="grid gap-6 xl:grid-cols-2">
@@ -107,7 +108,7 @@ export function AIInsightCards({ prediction }: AIInsightCardsProps) {
         </div>
         <p>
           Tomorrow looks like a{" "}
-          <span className={`font-semibold ${outlookTone === "sleep" ? "text-[var(--sleep)]" : outlookTone === "hrv" ? "text-[var(--hrv)]" : "text-[var(--load)]"}`}>
+          <span className={`font-semibold ${getForecastToneClass(outlookTone)}`}>
             {prediction.predictedRecoveryDay}
           </span>{" "}
           day.

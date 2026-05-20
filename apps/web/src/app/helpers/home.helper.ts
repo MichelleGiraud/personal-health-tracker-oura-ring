@@ -185,8 +185,11 @@ export function getBand(
 }
 
 export function getPredictionPillTone(value: string | null): "neutral" | "good" | "warn" {
-  if (value === "Ready" || value === "High") return "good";
-  if (value === "Recovery" || value === "Low") return "warn";
+  if (!value) return "neutral";
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized.includes("ready") || normalized.includes("high")) return "good";
+  if (normalized.includes("recovery") || normalized.includes("low")) return "warn";
   return "neutral";
 }
 
