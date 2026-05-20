@@ -1,6 +1,7 @@
 export type DailySummaryRow = {
   day: string;
   sleep_total_seconds: number | string | null;
+  sleep_efficiency: number | string | null;
   readiness_score: number | string | null;
   steps: number | string | null;
   activity_score: number | string | null;
@@ -9,12 +10,16 @@ export type DailySummaryRow = {
   stress_high_minutes: number | string | null;
   recovery_high_minutes: number | string | null;
   stress_day_summary: string | null;
-
+  sleep_deep_seconds: number | string | null;
+  sleep_rem_seconds: number | string | null;
+  sleep_light_seconds: number | string | null;
+  sleep_awake_seconds: number | string | null;
 };
 
 export type DailySummaryRowNormalized = {
   day: string;
   sleep_total_seconds: number | null;
+  sleep_efficiency: number | null;
   readiness_score: number | null;
   steps: number | null;
   activity_score: number | null;
@@ -23,7 +28,10 @@ export type DailySummaryRowNormalized = {
   stress_high_minutes: number | null;
   recovery_high_minutes: number | null;
   stress_day_summary: string | null;
-
+  sleep_deep_seconds: number | null;
+  sleep_rem_seconds: number | null;
+  sleep_light_seconds: number | null;
+  sleep_awake_seconds: number | null;
 };
 
 export type LastSyncedRow = {
@@ -42,3 +50,8 @@ export type ActiveUserRow = {
 };
 
 export type ChartMetric = "readiness" | "activity";
+
+export type RhythmChartModel = {
+  points: ChartPoint[];
+  path: string;
+};
