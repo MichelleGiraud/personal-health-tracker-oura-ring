@@ -50,3 +50,8 @@ export type ActiveUserRow = {
 };
 
 export type ChartMetric = "readiness" | "activity";
+
+export type RhythmChartModel = {
+  points: ChartPoint[];
+  path: string;
+};

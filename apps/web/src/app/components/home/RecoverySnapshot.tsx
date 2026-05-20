@@ -37,29 +37,18 @@ export function RecoverySnapshot({
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--text-muted)] sm:text-base">
             Today&apos;s body signal
           </p>
-
-          <h1 className="mt-8 max-w-5xl text-5xl font-semibold leading-[0.98] tracking-tight text-[var(--text)] sm:text-6xl lg:text-7xl">
+          <h1 className="mt-8 max-w-3xl text-3xl font-semibold leading-[0.98] tracking-tight text-[var(--text)] sm:text-2xl lg:text-3xl">
             {headline}
           </h1>
-
           <div className="mt-10">
             <p className="text-[120px] font-medium leading-none tracking-tight text-[var(--text)] sm:text-[140px]">
               {readinessValue}
             </p>
             <p className="mt-3 text-2xl font-medium text-[var(--recovery)] sm:text-3xl">{recoveryLabel}</p>
           </div>
-
           <p className="mt-10 max-w-3xl text-xl leading-[1.5] text-[var(--text-muted)] sm:text-2xl">
             {summary}
           </p>
-
-          <button
-            type="button"
-            className="mt-10 inline-flex h-18 items-center rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-elevated)_88%,white)] px-8 py-4 text-xl font-semibold text-[var(--text)] transition hover:brightness-105 sm:h-20 sm:px-10 sm:text-2xl"
-          >
-            View today&apos;s guidance
-          </button>
-
           <div className="mt-12 flex flex-wrap gap-4">
             {signalChips.map((chip) => (
               <span
@@ -71,7 +60,6 @@ export function RecoverySnapshot({
             ))}
           </div>
         </div>
-
         <div className="relative mx-auto flex w-full max-w-[720px] justify-center py-6 lg:py-0">
           <RecoveryRings />
           <div className="hidden md:block">
@@ -93,7 +81,6 @@ export function RecoverySnapshot({
           </div>
         </div>
       </div>
-
       <div className="mt-8 grid gap-3 md:hidden">
         <div className="flex items-center gap-3 rounded-[22px] border border-[color-mix(in_srgb,var(--border)_90%,white)] bg-[color-mix(in_srgb,var(--surface-elevated)_90%,#253029)] px-4 py-3 text-sm font-semibold shadow-sm">
           <Activity className="h-5 w-5 text-[var(--hrv)]" strokeWidth={2.3} />

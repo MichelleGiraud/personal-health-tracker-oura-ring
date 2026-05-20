@@ -56,7 +56,7 @@ function SignalCard({
       : "text-[var(--load)]";
 
   return (
-    <article id="todays-key-signals" className="rounded-[40px] border border-[color-mix(in_srgb,var(--border)_88%,white)] bg-[linear-gradient(180deg,#151b18_0%,#131916_100%)] p-10 shadow-[0_22px_60px_rgba(0,0,0,0.18)]">
+    <article id="todays-key-signals" className="rounded-[40px] border border-[color-mix(in_srgb,var(--border)_88%,white)] bg-[color-mix(in_srgb,var(--surface-elevated)_78%,#243028)] p-10 shadow-[0_22px_60px_rgba(0,0,0,0.18)]">
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)] sm:text-base">
         {eyebrow}
       </p>

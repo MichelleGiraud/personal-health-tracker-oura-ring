@@ -6,15 +6,18 @@ type PillProps = {
 };
 
 const toneClass: Record<NonNullable<PillProps["tone"]>, string> = {
-  neutral: "bg-zinc-100 text-zinc-700",
-  good: "bg-emerald-100 text-emerald-700",
-  warn: "bg-amber-100 text-amber-700",
+  neutral:
+    "border-[color-mix(in_srgb,var(--border)_82%,white)] bg-[color-mix(in_srgb,var(--surface-elevated)_72%,#253029)] text-[var(--text-secondary)]",
+  good:
+    "border-[color-mix(in_srgb,var(--recovery)_28%,var(--border))] bg-[color-mix(in_srgb,var(--recovery)_16%,#1e2822)] text-[var(--recovery)]",
+  warn:
+    "border-[color-mix(in_srgb,var(--load)_28%,var(--border))] bg-[color-mix(in_srgb,var(--load)_14%,#272117)] text-[var(--load)]",
 };
 
 export function Pill({ children, tone = "neutral" }: PillProps) {
   return (
     <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold tracking-wide ${toneClass[tone]}`}
+      className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold tracking-wide ${toneClass[tone]}`}
     >
       {children}
     </span>

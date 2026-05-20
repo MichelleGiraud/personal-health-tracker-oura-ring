@@ -3,6 +3,7 @@
 :root {
   --background: #0f1412;
 
+  --surface: #202822;
   --surface-deep: #171d1a;
   --surface-card: #202822;
   --surface-elevated: #273029;
@@ -11,11 +12,14 @@
   --text-secondary: #b8aea4;
   --text-muted: #7f8a82;
 
+  --border: #334039;
   --border-soft: #334039;
+  --shadow: rgba(0, 0, 0, 0.22);
 
   --recovery: #a8d5ba;
   --sleep: #a9b7ff;
   --hrv: #d7b8ff;
+  --stress: #ff9696;
   --load: #f2b880;
   --movement: #f0a6a6;
   --outlook: #e8d28a;

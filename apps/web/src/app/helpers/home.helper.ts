@@ -1,4 +1,4 @@
-import { DailySummaryRow, DailySummaryRowNormalized, ChartPoint } from "../types/types.home";
+import { DailySummaryRow, DailySummaryRowNormalized, ChartPoint, RhythmChartModel  } from "../types/types.home";
 
 export function formatSleep(seconds: number | null) {
   if (!seconds || seconds < 1) return "-";
@@ -14,6 +14,12 @@ export function formatDay(day: string | Date) {
   return day;
 }
 
+export function formatWeekdayLabel(day: string | Date) {
+  const date = day instanceof Date ? day : new Date(day);
+  if (Number.isNaN(date.getTime())) return formatDay(day).slice(5);
+  return date.toLocaleDateString("en-US", { weekday: "short" });
+}
+
 export function formatTimestamp(value: string | Date | null) {
   if (!value) return "-";
   const date = value instanceof Date ? value : new Date(value);
@@ -25,27 +31,27 @@ export function buildLineChartPoints(
   rows: DailySummaryRowNormalized[],
   getValue: (row: DailySummaryRowNormalized) => number | null,
   width: number,
-  height: number
+  height: number,
+  padding = 24
 ) {
-  const chartRows = [...rows].reverse();
-  const values = chartRows
+  const chartRows = [...rows].reverse(); // reverse the rows so that the oldest data is on the left
+  const values = chartRows //numeric values for the chart (y-axis values)
     .map((row) => getValue(row))
     .filter((value): value is number => value !== null);
 
   if (values.length === 0) {
-    return { points: [] as ChartPoint[], polyline: "" };
+    return { points: [] as ChartPoint[], polyline: "", path: "" };
   }
 
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const range = max - min || 1;
-  const padding = 24;
-  const innerWidth = width - padding * 2;
+  const range = max - min || 1; // range is the difference between the maximum and minimum values 
+  const innerWidth = width - padding * 2; // padding is used for the y-axis and the x-axis    
   const innerHeight = height - padding * 2;
   const definedRows = chartRows.filter((row) => getValue(row) !== null);
   const count = definedRows.length;
 
-  const points = definedRows
+  const points = definedRows  //array of points 
     .map((row, index) => {
       const rawValue = getValue(row);
       if (rawValue === null) return null;
@@ -67,7 +73,24 @@ export function buildLineChartPoints(
     .filter((point): point is ChartPoint => point !== null);
 
   const polyline = points.map((p) => `${p.x},${p.y}`).join(" ");
-  return { points, polyline };
+  return { points, polyline, path: buildSmoothPath(points) };
+}
+
+export function buildSmoothPath(points: Array<{ x: number; y: number }>) {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  let path = `M ${points[0].x} ${points[0].y}`;
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const controlX = (current.x + next.x) / 2;
+
+    path += ` C ${controlX} ${current.y}, ${controlX} ${next.y}, ${next.x} ${next.y}`;
+  }
+
+  return path;
 }
 
 export function getRecoveryLabel(score: number | null) {
@@ -187,3 +210,69 @@ export function getXLabelPoints(points: Array<{ x: number; label: string }>) {
 
   return [first, middle, last].map((point) => ({ x: point.x, label: point.label.slice(5) }));
 }
+
+export function getRecoveryDescription(points: RhythmChartModel["points"], range: number) {
+  if (points.length < 2) {
+    return `Not enough recovery data in the selected ${range}-day window`;
+  }
+
+  const first = points[0].value;
+  const last = points[points.length - 1].value;
+  const delta = last - first;
+  const periodLabel = range <= 7 ? "this week" : "across the selected window";
+
+  if (delta <= -4) return `Score trending down noticeably ${periodLabel}`;
+  if (delta < -1) return `Score trending down slightly ${periodLabel}`;
+  if (delta >= 4) return `Score improving clearly ${periodLabel}`;
+  if (delta > 1) return `Score improving slightly ${periodLabel}`;
+  return `Score holding relatively steady ${periodLabel}`;
+}
+
+export function getSleepDescription(points: RhythmChartModel["points"], range: number) {
+  if (points.length === 0) {
+    return `No sleep duration data in the selected ${range}-day window`;
+  }
+
+  const belowTargetCount = points.filter((point) => point.value < 7 * 3600).length;
+  if (belowTargetCount === 0) {
+    return `On target all ${points.length} days`;
+  }
+
+  return `Below target ${belowTargetCount} of ${points.length} days`;
+}
+
+export function getHrvDescription(points: RhythmChartModel["points"], range: number) {
+  if (points.length < 2) {
+    return `No HRV trend data in the selected ${range}-day window`;
+  }
+
+  const first = points[0].value;
+  const last = points[points.length - 1].value;
+  const delta = last - first;
+  const periodLabel = range <= 7 ? "this week" : "across the selected window";
+
+  if (delta <= -5) return `HRV trending down noticeably ${periodLabel}`;
+  if (delta < -2) return `HRV trending down slightly ${periodLabel}`;
+  if (delta >= 5) return `HRV improving clearly ${periodLabel}`;
+  if (delta > 2) return `HRV improving slightly ${periodLabel}`;
+  return `HRV holding relatively steady ${periodLabel}`;
+}
+
+export function getStressDescription(points: RhythmChartModel["points"], range: number) {
+  if (points.length === 0) {
+    return `No stress data in the selected ${range}-day window`;
+  }
+
+  const totalMinutes = points.reduce((sum, point) => sum + (point.value ?? 0), 0);
+  const averageMinutes = Math.round(totalMinutes / points.length);
+
+  const periodLabel = range <= 7 ? "this week" : "across the selected window";
+
+  if (averageMinutes === 0) {
+    return `No stress detected ${periodLabel}`;
+  }
+
+  return `Average ${averageMinutes} min/day ${periodLabel}`;
+}
+
+
