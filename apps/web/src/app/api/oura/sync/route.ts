@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
-import { getLatestToken, syncOuraForUser } from "@/lib/oura";
+import { getLatestToken } from "@/lib/oura";
+import { syncQueue } from "@/lib/queue";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -15,6 +16,20 @@ export async function GET(req: Request) {
     );
   }
 
-  const result = await syncOuraForUser(token.user_id, days);
-  return NextResponse.json({ success: true, ...result });
+  const job = await syncQueue.add("fetchDailySummaryMetrics", {
+    userId: token.user_id,
+    days,
+  });
+
+  return NextResponse.json(
+    {
+      success: true,
+      queued: true,
+      jobId: job.id,
+      userId: token.user_id,
+      days,
+      message: "Oura sync process successfully scheduled in the background.",
+    },
+    { status: 202 }
+  );
 }

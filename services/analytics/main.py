@@ -3,6 +3,7 @@ import psycopg2
 import pandas as pd
 import numpy as np
 import os
+import joblib
 
 from dotenv import load_dotenv
 
@@ -22,6 +23,9 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 load_dotenv(dotenv_path="../../apps/web/.env.local")
 
 app = FastAPI()
+# Creates a folder
+MODEL_DIR = "serialized_models" 
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 
 def get_db_connection():
@@ -252,6 +256,53 @@ def train_best_model(X: pd.DataFrame, y: pd.Series, best_model_name: str):
     pipeline = build_pipeline_for_model(best_model_name)
     pipeline.fit(X, y)
     return pipeline
+
+# --------------------------------------------------
+# Model Storage on disk with Joblib for persistance
+# --------------------------------------------------
+
+def train_and_save_user_model(user_id: str):
+    """
+    Runs full ML pipeline: loads data, performs time-series evaluation,
+    trains the best estimator, and serializes the model to disk.
+    """
+    # 1. Load data
+    df = load_user_data(user_id)
+    if df.empty or len(df) < 7:
+        print(f"Skipping model training for user {user_id}: Insufficient data.")
+        return False
+        
+    # 2. Fix Imputation (Forward fill temporal gaps before training)
+    # This prevents the mean imputation trend-leakage smell.
+    df = df.ffill().bfill()
+
+    # 3. Feature extraction
+    working_df, train_df, X, y, features = prepare_dataset(df)
+    
+    # 4. Cross validation selection
+    comparison = evaluate_models(X, y)
+    if "error" in comparison:
+        print(f"Training failed for user {user_id}: {comparison['error']}")
+        return False
+        
+    best_model_name = comparison["best_model_name"]
+    best_metrics = comparison["results"][0]
+    
+    # 5. Train final model
+    pipeline = train_best_model(X, y, best_model_name)
+    
+    # 6. Save Pipeline & Metadata
+    model_payload = {
+        "pipeline": pipeline,
+        "features": features,
+        "metrics": best_metrics,
+        "history_days": len(df)
+    }
+    
+    model_path = os.path.join(MODEL_DIR, f"model_{user_id}.joblib")
+    joblib.dump(model_payload, model_path)
+    print(f"Successfully saved {best_model_name} model for user {user_id} (MAE: {best_metrics['mean_mae']})")
+    return True
 
 
 # --------------------------------------------------

@@ -17,6 +17,8 @@ import {
   getYAxisTicks,
   normalizeDailySummaryRow,
   normalizeDailySummaryRows,
+  getStepsDescription,
+  getRestingHrDescription,
 } from "./helpers/home.helper";
 import type {
   ActiveUserRow,
@@ -161,6 +163,22 @@ export default async function Home({
   const stressRhythmChart = buildLineChartPoints(
     chartRowsN,
     (row) => row.stress_high_minutes,
+    rhythmChartWidth,
+    rhythmChartHeight,
+    rhythmChartPadding
+  );
+
+  const stepsChart = buildLineChartPoints(
+    chartRowsN,
+    (row) => row.steps,
+    rhythmChartWidth,
+    rhythmChartHeight,
+    rhythmChartPadding
+  );
+
+  const restingHrChart = buildLineChartPoints(
+    chartRowsN,
+    (row) => row.resting_hr_bpm,
     rhythmChartWidth,
     rhythmChartHeight,
     rhythmChartPadding
@@ -352,10 +370,15 @@ const recoveryFocus =
   },
 ];
 
+  const stepsValues = [...chartRowsN].reverse().map((r) => r.steps).filter((v): v is number => v !== null);
+  const restingHrValues = [...chartRowsN].reverse().map((r) => r.resting_hr_bpm).filter((v): v is number => v !== null);
+
   const recoveryYAxisTicks = getYAxisTicks(recoveryValues);
   const sleepYAxisTicks = getYAxisTicks(sleepValues.map((value) => value / 3600));
   const hrvYAxisTicks = getYAxisTicks(hrvValues);
   const stressYAxisTicks = getYAxisTicks(stressValues);
+  const stepsYAxisTicks = getYAxisTicks(stepsValues.map((v) => v / 1000));
+  const restingHrYAxisTicks = getYAxisTicks(restingHrValues);
   const heroHeadline =
     latestReadiness === null
       ? "Your body is waiting for more recovery data."
@@ -418,6 +441,10 @@ const recoveryFocus =
               hrvYAxisTicks={hrvYAxisTicks}
               stressChart={stressRhythmChart}
               stressYAxisTicks={stressYAxisTicks}
+              stepsChart={stepsChart}
+              stepsYAxisTicks={stepsYAxisTicks}
+              restingHrChart={restingHrChart}
+              restingHrYAxisTicks={restingHrYAxisTicks}
             />
             <AIPredictionsInsightsSection
               aiPrediction={aiPrediction}

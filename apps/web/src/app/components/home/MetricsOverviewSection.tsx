@@ -1,5 +1,5 @@
 import { MetricCard} from "../MetricCard";
-import { getRecoveryDescription, getSleepDescription, getHrvDescription, getStressDescription } from "../../helpers/home.helper";
+import { getRecoveryDescription, getSleepDescription, getHrvDescription, getStressDescription, getStepsDescription, getRestingHrDescription } from "../../helpers/home.helper";
 import type { RhythmChartModel } from "../../types/types.home";
 
 type MetricsOverviewSectionProps = {
@@ -12,6 +12,10 @@ type MetricsOverviewSectionProps = {
   hrvYAxisTicks: number[];
   stressChart: RhythmChartModel;
   stressYAxisTicks: number[];
+  stepsChart: RhythmChartModel;
+  stepsYAxisTicks: number[];
+  restingHrChart: RhythmChartModel;
+  restingHrYAxisTicks: number[];
 };
 
 export function MetricsOverviewSection({
@@ -24,6 +28,10 @@ export function MetricsOverviewSection({
   hrvYAxisTicks,
   stressChart,
   stressYAxisTicks,
+  stepsChart,
+  stepsYAxisTicks,
+  restingHrChart,
+  restingHrYAxisTicks,
 }: MetricsOverviewSectionProps) {
   return (
     <section id="metrics-overview-section" className="space-y-5">
@@ -51,15 +59,15 @@ export function MetricsOverviewSection({
           stroke="var(--sleep)"
           range={range}
         />
-        <MetricCard 
-          title="HRV trend"
+        <MetricCard
+          title="HRV Trend"
           description={getHrvDescription(hrvChart.points, range)}
-          emptyMessage={`No sleep trend data in the selected ${range}-day window.`}
+          emptyMessage={`No HRV trend data in the selected ${range}-day window.`}
           chart={hrvChart}
           yTicks={hrvYAxisTicks}
           stroke="var(--hrv)"
           range={range}
-        />  
+        />
         <MetricCard
           title="Stress"
           description={getStressDescription(stressChart.points, range)}
@@ -69,7 +77,25 @@ export function MetricsOverviewSection({
           stroke="var(--stress)"
           range={range}
         />
-      </div>    
-    </section>  
+        <MetricCard
+          title="Daily Steps"
+          description={getStepsDescription(stepsChart.points, range)}
+          emptyMessage={`No steps data in the selected ${range}-day window.`}
+          chart={stepsChart}
+          yTicks={stepsYAxisTicks}
+          stroke="var(--load)"
+          range={range}
+        />
+        <MetricCard
+          title="Resting Heart Rate"
+          description={getRestingHrDescription(restingHrChart.points, range)}
+          emptyMessage={`No resting HR data in the selected ${range}-day window.`}
+          chart={restingHrChart}
+          yTicks={restingHrYAxisTicks}
+          stroke="var(--hrv)"
+          range={range}
+        />
+      </div>
+    </section>
   );
 }

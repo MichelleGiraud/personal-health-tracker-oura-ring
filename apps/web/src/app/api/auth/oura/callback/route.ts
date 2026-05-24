@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { syncOuraForUser } from "@/lib/oura";
+import { syncQueue } from "@/lib/queue";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -77,20 +77,14 @@ export async function GET(req: Request) {
     ]
   );
 
-  let initialSync = null;
-  let initialSyncError = null;
-
-  try {
-    initialSync = await syncOuraForUser(userId, 30);
-  } catch (error) {
-    initialSyncError =
-      error instanceof Error ? error.message : "Initial sync failed";
-  }
+  await syncQueue.add("fetchDailySummaryMetrics", {
+    userId,
+    days: 30,
+  });
 
   return NextResponse.json({
     success: true,
     userId,
-    initialSync,
-    initialSyncError,
+    message: "Oura sync process successfully scheduled in the background.",
   });
 }

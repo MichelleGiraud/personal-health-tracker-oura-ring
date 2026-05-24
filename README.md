@@ -1,98 +1,158 @@
 # Personal Health Tracker (Oura Ring)
 
-A full-stack personalized health tracking application that integrates wearable data (Oura Ring), user-logged meals and workouts, and data analysis to generate health insights and recommendations. Built with Next.js, TypeScript, PostgreSQL, and Python.
+This repository contains a small monorepo for an Oura-based health dashboard:
 
-# UI/UX design
+- `apps/web`: Next.js app
+- `services/analytics`: FastAPI ML service
+- `infra/postgres`: local Postgres bootstrap
+- `packages/db`: schema assets
+- `docs`: architecture and structure notes
 
+If you only read one file first, read this one.
+
+## Start Here
+
+- Architecture: [docs/architecture.md](/Users/michelle.giraud/Github/personal-health-tracker-oura-ring/docs/architecture.md)
+- Folder map: [docs/project-structure.md](/Users/michelle.giraud/Github/personal-health-tracker-oura-ring/docs/project-structure.md)
+
+## Repo Layout
+
+```text
+personal-health-tracker-oura-ring/
+├── apps/
+│   └── web/                  Next.js app, API routes, queue, worker
+├── docs/
+│   ├── architecture.md       System diagrams and request flows
+│   └── project-structure.md  Folder guide
+├── infra/
+│   └── postgres/             Local database bootstrap SQL
+├── packages/
+│   └── db/                   Shared DB schema assets
+├── services/
+│   └── analytics/            FastAPI analytics service
+├── docker-compose.yml        Local Postgres + Redis
+├── package.json              Root helper scripts
+└── README.md                 Main entrypoint
+```
+
+## What Runs
+
+- PostgreSQL in Docker on `localhost:5433`
+- Redis in Docker on `localhost:6379`
+- Next.js on `localhost:3000`
+- FastAPI analytics on `localhost:8000`
+- BullMQ worker as a separate Node process
 
 ## Prerequisites
 
 - Node.js 20+
 - npm 10+
-- Docker Desktop (running)
+- Docker Desktop running
+- Python environment for `services/analytics`
 
-## First-time setup
+## First-Time Setup
 
-1. Install web dependencies:
+1. Install web dependencies.
 
-```powershell
+```bash
 npm --prefix apps/web install
 ```
 
-2. Confirm env file exists at `apps/web/.env.local` and includes:
+2. Create `apps/web/.env.local`.
 
 ```env
 DATABASE_URL=postgresql://app:app@localhost:5433/oura
 OURA_CLIENT_ID=...
 OURA_CLIENT_SECRET=...
 OURA_REDIRECT_URI=http://localhost:3000/api/auth/oura/callback
+REDIS_URL=redis://127.0.0.1:6379
+ANALYTICS_API_URL=http://localhost:8000
 ```
 
-## Start everything
+3. Create `services/analytics/.env`.
 
-From repository root:
-
-```powershell
-npm run dev
+```env
+DATABASE_URL=postgresql://app:app@localhost:5433/oura
+HOST=0.0.0.0
+PORT=8000
 ```
 
-This does both:
+## Run Locally
 
-1. Starts PostgreSQL in Docker (`db`) on `localhost:5433`.
-2. Starts the Next.js app in `apps/web`.
+Start infrastructure:
 
-Open the app at:
+```bash
+npm run db:up
+```
+
+Start the web app:
+
+```bash
+npm run web:dev
+```
+
+Start the background worker:
+
+```bash
+npm run web:worker
+```
+
+Start the analytics service:
+
+```bash
+cd services/analytics
+source .venv/bin/activate
+uvicorn main:app --reload
+```
+
+Open:
 
 - `http://localhost:3000`
-- If 3000 is busy, use the fallback URL shown in terminal (example: `http://localhost:3001`).
 
-## Useful commands
+## Root Commands
 
-```powershell
+```bash
 npm run db:up
 npm run db:down
 npm run db:logs
 npm run web:dev
 npm run web:build
+npm run web:worker
 ```
 
-## Start ml server
+## Common Flows
 
-```powershell
-source services/analytics/.venv/bin/activate
-cd services/analytics
-uvicorn main:app --reload
-```
+### OAuth + Sync
 
-## OAuth + sync flow
-
-After app is running:
-
-1. Start OAuth login in browser (replace `YOUR_CLIENT_ID`):
+1. Open the Oura OAuth URL in the browser.
 
 ```text
 https://cloud.ouraring.com/oauth/authorize?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:3000/api/auth/oura/callback&scope=daily%20heartrate
 ```
 
-2. Run a sync:
+2. The callback stores tokens and queues a background sync job.
+3. The worker fetches Oura data and stores it in Postgres.
+4. The worker asks the analytics service to retrain the user model.
+
+### Manual Sync
 
 ```text
 http://localhost:3000/api/oura/sync?days=7
 ```
 
+That endpoint now queues work instead of blocking the request.
+
+## Database Connection
+
+Use this connection string locally:
+
+```text
+postgresql://app:app@127.0.0.1:5433/oura
+```
+
 ## Troubleshooting
 
-- `Port 3000 is in use`: stop old Node process, then rerun `npm run dev`.
-- `Unable to acquire lock ... .next/dev/lock`: another `next dev` is already running in `apps/web`; stop it and restart.
-- DB connection errors: run `npm run db:logs` and verify `DATABASE_URL` uses port `5433`.
-
-## The architecture to retrieve the data
-Oura API
-   ↓
-fetchWithAutoRefresh()
-   ↓
-saveRawDailyData()
-   ↓
-saveDailySummary()
-   ↓
-daily_summary table
+- If the DB connection fails, verify that the port is `5433`, not `5432`.
+- If the worker is not processing jobs, verify that Redis is running and `REDIS_URL` matches `localhost:6379`.
+- If the dashboard loads but prediction fails, verify that the analytics service is running on `localhost:8000`.
+- If `next dev` complains about a lock file, stop the old Next process and restart it.

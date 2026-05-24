@@ -278,4 +278,36 @@ export function getStressDescription(points: RhythmChartModel["points"], range: 
   return `Average ${averageMinutes} min/day ${periodLabel}`;
 }
 
+export function getStepsDescription(points: RhythmChartModel["points"], range: number) {
+  if (points.length === 0) {
+    return `No steps data in the selected ${range}-day window`;
+  }
+
+  const total = points.reduce((sum, point) => sum + (point.value ?? 0), 0);
+  const average = Math.round(total / points.length);
+  const periodLabel = range <= 7 ? "this week" : "across the selected window";
+  const formatted = average >= 1000 ? `${(average / 1000).toFixed(1)}k` : `${average}`;
+
+  if (average >= 10000) return `Averaging ${formatted} steps/day — on target ${periodLabel}`;
+  if (average >= 7000) return `Averaging ${formatted} steps/day ${periodLabel}`;
+  return `Averaging ${formatted} steps/day — below target ${periodLabel}`;
+}
+
+export function getRestingHrDescription(points: RhythmChartModel["points"], range: number) {
+  if (points.length < 2) {
+    return `No resting HR trend data in the selected ${range}-day window`;
+  }
+
+  const first = points[0].value;
+  const last = points[points.length - 1].value;
+  const delta = last - first;
+  const periodLabel = range <= 7 ? "this week" : "across the selected window";
+
+  if (delta >= 4) return `Resting HR rising noticeably ${periodLabel}`;
+  if (delta > 1) return `Resting HR trending slightly higher ${periodLabel}`;
+  if (delta <= -4) return `Resting HR dropping noticeably ${periodLabel}`;
+  if (delta < -1) return `Resting HR trending slightly lower ${periodLabel}`;
+  return `Resting HR holding steady ${periodLabel}`;
+}
+
 

@@ -4,3 +4,4 @@ scikit-learn==1.4.1.post1 #To create the machine learning models
 pandas==2.2.1 #To create the machine learning models
 psycopg2-binary==2.9.9 #To connect to the database
 python-dotenv==1.0.1 #To load the environment variables
+pydantic-settings==2.3.4 #To manage service-local configuration

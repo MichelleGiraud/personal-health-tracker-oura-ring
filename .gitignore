@@ -11,6 +11,7 @@ out/
 .env.*.local
 .venv/
 services/analytics/.venv/
+services/analytics/serialized_models/
 
 # Logs
 npm-debug.log*

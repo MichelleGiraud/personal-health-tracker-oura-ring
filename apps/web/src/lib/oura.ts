@@ -1,3 +1,4 @@
+import { UnrecoverableError } from "bullmq";
 import { query } from "@/lib/db";
 import { OuraTokenRow, OuraDailySource, DailySummaryAccumulator } from "../app/types/types.oura";
 
@@ -55,6 +56,10 @@ async function refreshAccessToken(
   const tokenJson = await tokenRes.json();
 
   if (!tokenRes.ok) {
+    // 400 invalid_request means the token is permanently invalid — retrying won't help.
+    if (tokenRes.status === 400) {
+      throw new UnrecoverableError(`Failed to refresh token: ${JSON.stringify(tokenJson)}`);
+    }
     throw new Error(`Failed to refresh token: ${JSON.stringify(tokenJson)}`);
   }
 
@@ -121,6 +126,16 @@ async function fetchWithAutoRefresh(
 }
 
 function toISODate(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+// The Oura API attributes all daily data to the bedtime date (when the sleep started).
+// The Oura app displays everything under the wake-up date (bedtime + 1 day).
+// Shift by +1 so our dates match what users see in the Oura app.
+function shiftDayForward(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString().slice(0, 10);
 }
 
@@ -233,10 +248,11 @@ async function saveDailySummary(userId: string, source: OuraDailySource, payload
   const data = Array.isArray(payload.data) ? payload.data : [];
 
   for (const row of data) {
-    const day = typeof row?.day === "string" ? row.day : null;
-    if (!day) {
+    const rawDay = typeof row?.day === "string" ? row.day : null;
+    if (!rawDay) {
       continue;
     }
+    const day = shiftDayForward(rawDay);
 
     const patch = buildSummaryPatch(source, row as Record<string, unknown>);
     if (isEmptyPatch(patch)) {
