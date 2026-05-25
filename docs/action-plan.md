@@ -960,9 +960,9 @@ You can also verify correctness: run a sync, check that all 30 days appear in `d
 
 ## Checklist
 
-- [ ] Week 1 — Pino structured logging in syncWorker
-- [ ] Week 1 — Replace hardcoded localhost, add .env.example
-- [ ] Week 2 — Unit tests for 5 pure functions (Vitest + pytest)
+- [x] Week 1 — Pino structured logging in syncWorker
+- [x] Week 1 — Replace hardcoded localhost, add .env.example
+- [x] Week 2 — Unit tests for 5 pure functions (Vitest + pytest)
 - [ ] Week 2 — predict-readiness uses saved model, /train-model POST endpoint added
 - [ ] Week 3 — ADR-001 written
 - [ ] Week 3 — OAuth state parameter validation added

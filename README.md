@@ -164,6 +164,87 @@ Replaced silent `|| "http://localhost:8000"` fallbacks with a `requireEnv()` hel
 - Helper: `apps/web/src/lib/env.ts`
 - Reference for required variables: `apps/web/.env.example`
 
+## Testing
+
+### Web App (`apps/web`)
+
+Tests are written with [Vitest](https://vitest.dev/) and live in `apps/web/src/lib/test/oura.test.ts`.
+
+#### Run Tests
+
+```bash
+cd apps/web
+npx vitest run
+```
+
+#### Test Coverage
+
+**`shiftDayForward`**
+
+| Test | Description |
+|------|-------------|
+| shifts a normal date forward by one day | `"2024-01-15"` → `"2024-01-16"` |
+| rolls over to the next month correctly | `"2024-01-31"` → `"2024-02-01"` |
+| handles leap year February correctly | `"2024-02-28"` → `"2024-02-29"` (leap), `"2023-02-28"` → `"2023-03-01"` (non-leap) |
+| rolls over to the next year correctly | `"2024-12-31"` → `"2025-01-01"` |
+
+**`normalizeNumber`**
+
+| Test | Description |
+|------|-------------|
+| returns a valid number unchanged | `42`, `0`, `-5` pass through |
+| returns null for non-numbers | strings, `null`, `undefined` → `null` |
+| returns null for non-finite values | `Infinity`, `NaN` → `null` |
+
+**`normalizePositiveNumber`**
+
+| Test | Description |
+|------|-------------|
+| returns a positive number | `5` → `5` |
+| returns null for zero | `0` → `null` |
+| returns null for negative numbers | `-1` → `null` |
+| returns null for non-numbers | `null` → `null` |
+
+**`buildSummaryPatch`**
+
+| Test | Description |
+|------|-------------|
+| extracts sleep fields from a sleep row | Maps `total_sleep_duration`, `efficiency`, `average_hrv`, `lowest_heart_rate` |
+| returns empty patch for a nap row | Rows with `type: "nap"` are ignored |
+| extracts readiness_score from daily_readiness row | Maps `score` → `readiness_score` |
+| extracts steps from daily_activity row | Maps `steps` and `score` → `activity_score` |
+
+---
+
+### Analytics Service (`services/analytics`)
+
+Tests are written with [pytest](https://docs.pytest.org/) and live in `services/analytics/test_helpers.py`.
+
+#### Setup
+
+```bash
+cd services/analytics
+pip3 install -r requirements.txt
+```
+
+#### Run Tests
+
+```bash
+python3 -m pytest test_helpers.py -v
+```
+
+#### Test Coverage
+
+| Test | Function | Description |
+|------|----------|-------------|
+| `test_label_readiness_optimal` | `label_readiness` | Score ≥ 85 → `"Optimal"` |
+| `test_label_readiness_good` | `label_readiness` | Score 70–84 → `"Good"` |
+| `test_label_readiness_fair` | `label_readiness` | Score 55–69 → `"Fair"` |
+| `test_label_readiness_low` | `label_readiness` | Score ≤ 54 → `"Low"` |
+| `test_classify_recovery_day_ready` | `classify_recovery_day` | Score ≥ 75 → `"Ready"` |
+| `test_classify_recovery_day_moderate` | `classify_recovery_day` | Score 60–74 → `"Moderate"` |
+| `test_classify_recovery_day_recovery` | `classify_recovery_day` | Score ≤ 59 → `"Recovery"` |
+
 ## Troubleshooting
 
 - If the DB connection fails, verify that the port is `5433`, not `5432`.

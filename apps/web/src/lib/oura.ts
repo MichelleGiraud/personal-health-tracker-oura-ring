@@ -132,21 +132,21 @@ function toISODate(d: Date) {
 // The Oura API attributes all daily data to the bedtime date (when the sleep started).
 // The Oura app displays everything under the wake-up date (bedtime + 1 day).
 // Shift by +1 so our dates match what users see in the Oura app.
-function shiftDayForward(dateStr: string): string {
+export function shiftDayForward(dateStr: string): string {
   const [year, month, day] = dateStr.split("-").map(Number);
   const d = new Date(Date.UTC(year, month - 1, day));
   d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString().slice(0, 10);
 }
 
-function normalizeNumber(value: unknown): number | null {
+export function normalizeNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
   }
   return null;
 }
 
-function normalizePositiveNumber(value: unknown): number | null {
+export function normalizePositiveNumber(value: unknown): number | null {
   const normalized = normalizeNumber(value);
   if (normalized === null || normalized <= 0) {
     return null;
@@ -154,7 +154,7 @@ function normalizePositiveNumber(value: unknown): number | null {
   return normalized;
 }
 
-function shouldPersistSleepSummary(row: Record<string, unknown>) {
+export function shouldPersistSleepSummary(row: Record<string, unknown>) {
   const sleepType = typeof row.type === "string" ? row.type : null;
 
   // Oura sleep data can include naps. Keep those in raw storage, but only
@@ -194,7 +194,7 @@ async function saveRawDailyData(
   }
 }
 
-function buildSummaryPatch(source: OuraDailySource, row: Record<string, unknown>): DailySummaryAccumulator {
+export function buildSummaryPatch(source: OuraDailySource, row: Record<string, unknown>): DailySummaryAccumulator {
   if (source === "sleep") {
     if (!shouldPersistSleepSummary(row)) {
       return {};
