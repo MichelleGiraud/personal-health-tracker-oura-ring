@@ -1,4 +1,5 @@
 import type { AiPrediction } from "../types/types.ai";
+import { requireEnv } from "@/lib/env";
 
 const EMPTY_AI_PREDICTION: AiPrediction = {
   predictedReadinessTomorrow: null,
@@ -9,13 +10,15 @@ const EMPTY_AI_PREDICTION: AiPrediction = {
   predictionReason: null,
 };
 
+const analyticsApiUrl = requireEnv("ANALYTICS_API_URL");
+
 export async function fetchAiPrediction(activeUserId: string | null): Promise<AiPrediction> {
   if (!activeUserId) {
     return EMPTY_AI_PREDICTION;
   }
 
   try {
-    const predRes = await fetch(`http://localhost:8000/predict-readiness?user_id=${activeUserId}`, {
+    const predRes = await fetch(`${analyticsApiUrl}/predict-readiness?user_id=${activeUserId}`, {
       cache: "no-store",
     });
 

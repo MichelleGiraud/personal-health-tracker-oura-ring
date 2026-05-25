@@ -3,9 +3,11 @@ import IORedis from "ioredis";
 
 import { syncOuraForUser } from "../lib/oura";
 import type { OuraSyncJobData } from "../lib/queue";
+import { logger } from "../lib/logger";
+import { requireEnv } from "../lib/env";
 
 const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
-const analyticsApiUrl = process.env.ANALYTICS_API_URL || "http://localhost:8000";
+const analyticsApiUrl = requireEnv("ANALYTICS_API_URL");
 
 const connection = new IORedis(redisUrl, {
   maxRetriesPerRequest: null,
@@ -15,9 +17,16 @@ const syncWorker = new Worker<OuraSyncJobData>(
   "OuraSyncJobs",
   async (job) => {
     const { userId, days } = job.data;
-    console.log(`Starting background Oura sync task for user: ${userId} (${days} days)`);
+    const startMs = Date.now();
+
+    logger.info({ userId, jobId: job.id, days }, "sync_started");
 
     const result = await syncOuraForUser(userId, days);
+
+    logger.info(
+      { userId, jobId: job.id, durationMs: Date.now() - startMs, counts: result.counts },
+      "sync_completed"
+    );
 
     try {
       const trainResponse = await fetch(`${analyticsApiUrl}/train-model?user_id=${userId}`, {
@@ -25,13 +34,13 @@ const syncWorker = new Worker<OuraSyncJobData>(
       });
       if (!trainResponse.ok) {
         const body = await trainResponse.text();
-        console.warn(`Model retrain non-OK for user ${userId}: ${body}`);
+        logger.warn({ userId, status: trainResponse.status, body }, "model_retrain_failed");
+      } else {
+        logger.info({ userId }, "model_retrain_triggered");
       }
     } catch (trainErr) {
-      const msg = trainErr instanceof Error
-        ? (trainErr.message || trainErr.cause?.toString() || String(trainErr))
-        : String(trainErr);
-      console.warn(`Model retrain skipped for user ${userId} (analytics service unreachable): ${msg}`);
+      const msg = trainErr instanceof Error ? trainErr.message : String(trainErr);
+      logger.warn({ userId, err: msg }, "model_retrain_skipped_service_unreachable");
     }
 
     return result;
@@ -40,16 +49,15 @@ const syncWorker = new Worker<OuraSyncJobData>(
 );
 
 syncWorker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed successfully!`);
+  logger.info({ jobId: job.id }, "job_completed");
 });
 
 syncWorker.on("failed", (job, err) => {
-  const detail = err.message || err.cause?.toString() || err.stack || String(err);
-  console.error(`Job ${job?.id} failed: ${detail}`);
+  logger.error({ jobId: job?.id, err: err.message, stack: err.stack }, "job_failed");
 });
 
 async function shutdown(signal: string) {
-  console.log(`Received ${signal}. Closing sync worker...`);
+  logger.info({ signal }, "worker_shutting_down");
   await syncWorker.close();
   await connection.quit();
   process.exit(0);

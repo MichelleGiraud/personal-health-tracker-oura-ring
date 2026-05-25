@@ -150,6 +150,20 @@ Use this connection string locally:
 postgresql://app:app@127.0.0.1:5433/oura
 ```
 
+## Engineering Improvements
+
+### Structured logging with Pino
+All logs in the background worker are now structured JSON instead of plain text strings. Each log line includes searchable fields (`userId`, `jobId`, `durationMs`) and a short event name (`sync_started`, `sync_completed`, `job_failed`). In local dev, output is pretty-printed with colors. In production, raw JSON is emitted for log aggregators.
+
+- Logger config: `apps/web/src/lib/logger.ts`
+- Usage: `apps/web/src/workers/syncWorker.ts`
+
+### Required environment variables
+Replaced silent `|| "http://localhost:8000"` fallbacks with a `requireEnv()` helper that crashes immediately with a clear error if a variable is missing. This prevents silent misconfigurations in deployed environments.
+
+- Helper: `apps/web/src/lib/env.ts`
+- Reference for required variables: `apps/web/.env.example`
+
 ## Troubleshooting
 
 - If the DB connection fails, verify that the port is `5433`, not `5432`.
